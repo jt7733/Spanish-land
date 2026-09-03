@@ -20,8 +20,16 @@ This folder is a PWA. Put it on the web once, then install it from Chrome like a
 
 ### 2. Install it on your phone
 
-Open that URL in **Chrome** on Android → tap the ⋮ menu → **Install app** (or "Add to Home screen").
-It gets its own icon, opens full-screen with no browser bar, and works offline.
+Open that URL in **Chrome** on Android. After a few seconds an orange **Instalar app** button
+appears at the bottom — tap it. (Or use Chrome's ⋮ menu → Add to Home screen.)
+
+If the orange button never appears, a grey **¿No aparece instalar?** button shows instead.
+Tap it for a diagnostic that checks the address, the manifest, its MIME type, the service worker
+and the icons, and tells you exactly which one is failing.
+
+**Important:** upload the *contents* of this folder to the repository root, not the folder itself.
+`index.html`, `manifest.json` and `sw.js` must sit at the top level of the repo, so your URL is
+`https://YOURNAME.github.io/mi-espanol/` and not `.../mi-espanol/app/`.
 
 The story, boss fights and writing review need your Anthropic API key
 (console.anthropic.com → API keys). A panel asks for it the first time. Everything else works without one.

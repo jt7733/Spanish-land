@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Mi Español · El Reino de Solaria</title>
 <meta name="theme-color" content="#0E2340" />
-<link rel="manifest" href="manifest.webmanifest" />
+<link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon-192.png" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -26,6 +26,15 @@
     background:#F2A007; color:#081729; font-weight:700; font-size:15px; }
   #keybar .skip { background:transparent; color:#8FBCE8; border:1px solid #2B5187; }
   #keybar code { color:#F2A007; }
+
+  #installbtn, #whybtn { display:none; position:fixed; left:12px; right:12px; bottom:92px; z-index:900;
+    padding:14px; border:0; border-radius:12px; font-family:system-ui,sans-serif; font-size:15px; font-weight:700; }
+  #installbtn { background:#F2A007; color:#081729; }
+  #whybtn { background:#1B3A63; color:#8FBCE8; border:1px solid #2B5187; font-weight:500; font-size:13px; }
+  #diag { display:none; position:fixed; inset:0; z-index:950; background:rgba(8,23,41,.97); color:#FBF6EC;
+    padding:24px; font-family:system-ui,sans-serif; overflow-y:auto; }
+  #diag h3 { margin:0 0 12px; } #diag p { margin:6px 0; font-size:14px; }
+  #diag button { margin-top:16px; padding:12px 20px; border:0; border-radius:10px; background:#F2A007; color:#081729; font-weight:700; }
 </style>
 </head>
 <body>
@@ -5683,6 +5692,58 @@ function SOSSheet({
 }
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
 </script>
-<script>if("serviceWorker" in navigator && location.protocol!=="file:"){navigator.serviceWorker.register("sw.js").catch(()=>{});}</script>
+
+
+<button id="installbtn">Instalar app</button>
+<button id="whybtn">¿No aparece instalar?</button>
+<div id="diag"></div>
+<script>
+(function(){
+  var deferred = null;
+  var ib = document.getElementById('installbtn');
+  var wb = document.getElementById('whybtn');
+  var dg = document.getElementById('diag');
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); deferred = e;
+    ib.style.display = 'block'; wb.style.display = 'none';
+  });
+  ib.onclick = async function(){
+    if (!deferred) return;
+    deferred.prompt(); await deferred.userChoice;
+    deferred = null; ib.style.display = 'none';
+  };
+  window.addEventListener('appinstalled', function(){ ib.style.display='none'; wb.style.display='none'; });
+
+  if (!standalone) setTimeout(function(){ if (!deferred) wb.style.display = 'block'; }, 3500);
+
+  wb.onclick = async function(){
+    var rows = [];
+    rows.push(['Dirección segura (https)', location.protocol === 'https:']);
+    var mres = null;
+    try { mres = await fetch('manifest.json'); } catch(e) {}
+    rows.push(['manifest.json carga', !!(mres && mres.ok)]);
+    rows.push(['Tipo MIME del manifest', mres ? (mres.headers.get('content-type') || 'desconocido') : 'no carga']);
+    var reg = null;
+    try { reg = await navigator.serviceWorker.getRegistration(); } catch(e) {}
+    rows.push(['Service worker activo', !!reg]);
+    rows.push(['icon-192 carga', await fetch('icon-192.png').then(r=>r.ok).catch(()=>false)]);
+    rows.push(['icon-512 carga', await fetch('icon-512.png').then(r=>r.ok).catch(()=>false)]);
+    rows.push(['Navegador', /Chrome/.test(navigator.userAgent) && !/EdgA|SamsungBrowser|Firefox/.test(navigator.userAgent) ? 'Chrome' : navigator.userAgent.slice(0,60)]);
+    dg.innerHTML = '<h3>Diagnóstico</h3>' + rows.map(function(r){
+      var v = r[1] === true ? '✓' : r[1] === false ? '✗' : r[1];
+      var col = r[1] === true ? '#1F8A70' : r[1] === false ? '#D6455D' : '#8FBCE8';
+      return '<p><b style="color:' + col + '">' + v + '</b> &nbsp;' + r[0] + '</p>';
+    }).join('') + '<p style="margin-top:14px;color:#8FBCE8">Si todo está en verde, usa el menú ⋮ de Chrome → Añadir a pantalla de inicio.</p><button onclick="document.getElementById(\'diag\').style.display=\'none\'">Cerrar</button>';
+    dg.style.display = 'block';
+  };
+})();
+</script>
+
 </body>
 </html>
